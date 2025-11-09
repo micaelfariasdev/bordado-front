@@ -166,12 +166,7 @@ export default function UserMenu() {
                             <img
                                 src={qrCode}
                                 alt="QR Code"
-                                style={{
-                                    width: 180,
-                                    height: 180,
-                                    borderRadius: 8,
-                                    boxShadow: "0 0 10px rgba(0,0,0,0.2)"
-                                }}
+                                className="w-180 h-180 rounded-lg shadow-md"
                             />
                         ) : (
                             <Typography variant="body2" color="text.secondary">
