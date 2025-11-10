@@ -5,7 +5,8 @@ import {
     Divider
 } from "@mui/material"
 import type { Pedido } from "../../home"
-import axios from "axios"
+import api from "../auth/axiosConfig"
+
 
 
 
@@ -22,7 +23,7 @@ export default function DialogEditarPedido({ open, onClose }: Props) {
             setForm(undefined)
             return
         }
-        axios.get(`http://localhost:3000/api/pedidos/${open}`).then(res => { setForm(res.data.data) }).catch(err => console.error(err))
+        api.get(`api/pedidos/${open}`).then(res => { setForm(res.data.data) }).catch(err => console.error(err))
 
     }, [open])
 
@@ -41,7 +42,7 @@ export default function DialogEditarPedido({ open, onClose }: Props) {
     const handleSubmit = () => {
         onClose(null)
         console.log("Salvar pedido:", form)
-        axios.patch(`http://localhost:3000/api/pedidos/${open}`, form)
+        api.patch(`api/pedidos/${open}`, form)
     }
     if (!form) return null
     return (
