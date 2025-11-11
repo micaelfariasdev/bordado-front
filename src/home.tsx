@@ -85,7 +85,21 @@ const Home: React.FC = () => {
       try {
         const response = await api.get("api/pedidos");
         setPedidos(response.data.data);
+        console.log(response.data.error)
+
+        
       } catch (error) {
+        // Verifica se é um erro do Axios antes de acessar response
+        if (
+          typeof error === "object" &&
+          error !== null &&
+          "response" in error &&
+          (error as any).response &&
+          (error as any).response.data &&
+          (error as any).response.data.error === "Token ausente"
+        ) {
+          window.location.href = "/login";
+        }
         console.error("Erro ao buscar pedidos:", error);
       }
     };
@@ -99,8 +113,12 @@ const Home: React.FC = () => {
 
     const connect = () => {
       if (wsRef.current) wsRef.current.close();
+      const token = localStorage.getItem('authToken')
 
-      const ws = new WebSocket("ws://localhost:3000");
+
+      // conecta WS com autenticação
+      const ws = new WebSocket(`ws://localhost:3000?token=${token}`)
+
       wsRef.current = ws;
 
       ws.onopen = () => {
@@ -134,14 +152,15 @@ const Home: React.FC = () => {
 
       ws.onerror = () => ws.close();
     };
-
-    connect();
+    if (profile?.logged) {
+      connect();
+    }
 
     return () => {
       wsRef.current?.close();
       wsRef.current = null;
     };
-  }, []);
+  }, [profile]);
 
   useEffect(() => {
     if (pedidos.length > 0 && profile?.logged) {
@@ -247,7 +266,7 @@ const Home: React.FC = () => {
                 </>
               )}
             </Stack>
-            <UserMenu onProfile={setProfile} profile={profile ?? null}/>
+            <UserMenu onProfile={setProfile} profile={profile ?? null} />
           </Stack>
         </header>
 

@@ -13,7 +13,7 @@ import {
 import api from './assets/auth/axiosConfig';
 
 // URL do endpoint de login da sua API
-const LOGIN_URL = "auth/login"; 
+const LOGIN_URL = "auth/login";
 
 // 1. Definição da interface para os dados do formulário
 interface LoginForm {
@@ -28,7 +28,7 @@ interface LoginResponse {
 }
 
 
-const LoginPage: React.FC = ()  => {
+const LoginPage: React.FC = () => {
   const [form, setForm] = useState<LoginForm>({ username: '', senha: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,36 +50,33 @@ const LoginPage: React.FC = ()  => {
     setError(null);
     setSuccess(false);
 
-    // Validação básica
     if (!form.username.trim() || !form.senha.trim()) {
-        setError("Por favor, preencha o nome de usuário e a senha.");
-        setLoading(false);
-        return;
+      setError("Por favor, preencha o nome de usuário e a senha.");
+      setLoading(false);
+      return;
     }
 
     try {
-        console.log("Enviando dados de login:", form);
+      console.log("Enviando dados de login:", form);
       const response = await api.post<LoginResponse>(LOGIN_URL, form);
-      
-      // ✅ 3. ARMAZENAR O TOKEN NO LOCAL STORAGE
+
       const token = response.data.token;
       localStorage.setItem('authToken', token);
-      
+
       setSuccess(true);
-      
-      // Lógica de Redirecionamento: 
-      // Em uma aplicação real, você faria um redirecionamento aqui:
-      // navigate('/dashboard'); 
+
       console.log("Login bem-sucedido! Token armazenado.");
+      window.location.href = "/login";
+
 
     } catch (err) {
       let errorMessage = "Erro desconhecido. Tente novamente.";
-      
-    
-      
+
+
+
       setError(errorMessage);
       localStorage.removeItem('authToken'); // Garante que não há token inválido
-      
+
     } finally {
       setLoading(false);
     }
@@ -101,7 +98,7 @@ const LoginPage: React.FC = ()  => {
         </Typography>
 
         <Box component="form" onSubmit={handleSubmit} noValidate>
-          
+
           {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
           {success && <Alert severity="success" sx={{ mb: 2 }}>Login efetuado! Redirecionando...</Alert>}
 
@@ -139,7 +136,7 @@ const LoginPage: React.FC = ()  => {
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : 'Entrar'}
           </Button>
-          
+
           <Box align="center">
             <MuiLink href="/recuperar-senha" variant="body2">
               Esqueceu a senha?

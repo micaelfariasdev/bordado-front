@@ -14,6 +14,7 @@ import LogoutIcon from "@mui/icons-material/Logout";
 import { styled } from "@mui/material/styles";
 import Badge from "@mui/material/Badge";
 import type { Profile } from "../../home";
+import api from "../auth/axiosConfig";
 
 const StyledBadge = styled(Badge)(({ theme }) => ({
   "& .MuiBadge-badge": {
@@ -57,15 +58,14 @@ type Props = {
   profile?: Profile | null;
 };
 
-export default function UserMenu({ onProfile, profile }: Props){
+export default function UserMenu({ onProfile, profile }: Props) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [loading, setLoading] = useState(false);
   const [qrCode, setQrCode] = useState<string>("");
-  const [user, setUser] = useState<Profile>();
 
   async function checkLogin() {
-    const res = await fetch("http://localhost:3000/api/whatsapp/login");
-    const data = await res.json();
+    const res = await api.get("api/whatsapp/login");
+    const data = await res.data;
     if (data.logged) {
       onProfile(data);
       handleClose();
@@ -78,7 +78,7 @@ export default function UserMenu({ onProfile, profile }: Props){
   }
 
   useEffect(() => {
-    setUser(profile || undefined);
+    onProfile(profile || null);
   }, [profile]);
 
   const open = Boolean(anchorEl);
@@ -102,7 +102,7 @@ export default function UserMenu({ onProfile, profile }: Props){
     }
   };
 
-  if (user?.logged) {
+  if (profile?.logged) {
     return (
       <Box display="flex" alignItems="center" gap={1}>
         <IconButton onClick={handleMenu}>
@@ -111,7 +111,7 @@ export default function UserMenu({ onProfile, profile }: Props){
             anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
             variant="dot"
           >
-            <Avatar src={user.profilePic} alt={user.user} />
+            <Avatar src={profile.profilePic} alt={profile.user} />
           </StyledBadge>
         </IconButton>
 
@@ -123,10 +123,10 @@ export default function UserMenu({ onProfile, profile }: Props){
           transformOrigin={{ vertical: "top", horizontal: "right" }}
         >
           <MenuItem className="flex flex-col">
-            <Typography variant="body1">{user.user}</Typography>
+            <Typography variant="body1">{profile.user}</Typography>
 
             <Typography className="italic text-[12px]">
-              {formatarTelefone(user.Número)}
+              {formatarTelefone(profile.Número)}
             </Typography>
           </MenuItem>
           <Divider sx={{ mb: 1 }} />
