@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   TextField,
   Button,
-  Grid,
   MenuItem,
   Checkbox,
   Box,
@@ -11,7 +10,9 @@ import {
   CircularProgress,
   DialogContent,
   DialogActions,
+  Autocomplete,
 } from "@mui/material";
+import Grid from "@mui/material/Grid";
 
 import { useEffect } from "react";
 import api from "../auth/axiosConfig";
@@ -29,6 +30,7 @@ interface PedidoForm {
 }
 
 const FORMAS_PAGAMENTO = ["pix", "credito", "debito", "dinheiro"];
+
 
 // Props para receber a função de fechar do Dialog
 interface NovoPedidoFormProps {
@@ -75,7 +77,7 @@ export const NovoPedidoForm: React.FC<NovoPedidoFormProps> = ({ onClose }) => {
 
   useEffect(() => {
     api.get("api/clientes").then((response) => {
-    setClientes(response.data.data);
+      setClientes(response.data.data);
     });
   }, []);
 
@@ -133,24 +135,30 @@ export const NovoPedidoForm: React.FC<NovoPedidoFormProps> = ({ onClose }) => {
         )}
 
         <Grid container spacing={1} direction="column">
-          <Grid item xs={12}>
-            <TextField
-              select
-              label="Cliente ID"
-              name="clienteId"
-              value={form.clienteId}
-              onChange={handleChange}
-              fullWidth
-              margin="normal"
-              required
-            >
-              {clientes &&
-                clientes.map((option) => (
-                  <MenuItem key={option.id} value={option.id}>
-                    {option.nomeCliente}
-                  </MenuItem>
-                ))}
-            </TextField>
+          <Grid item>
+            <Autocomplete
+              disablePortal
+              options={clientes}
+              getOptionLabel={(option) => option.nomeCliente || ""}
+              value={
+                (clientes && clientes?.find((c) => c.id === form.clienteId)) ||
+                null
+              }
+              onChange={(event, value) =>
+                handleChange({
+                  target: { name: "clienteId", value: value ? value.id : "" },
+                })
+              }
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Cliente ID"
+                  fullWidth
+                  margin="normal"
+                  required
+                />
+              )}
+            />
           </Grid>
 
           <Grid item xs={12}>

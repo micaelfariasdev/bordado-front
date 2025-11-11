@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Stack } from "@mui/material";
 import UserMenu from "./assets/components/MenuAvatar";
-import { PedidoCard } from "./assets/components/PedidoCar";
 import DialogEditarPedido from "./assets/components/DialogEditarPedido";
 import { NovoPedidoForm } from "./assets/components/NovoPedido";
-import { Button, Dialog, DialogTitle, IconButton, Box } from "@mui/material";
+import { Button, Dialog, DialogTitle, IconButton } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import CloseIcon from "@mui/icons-material/Close";
 import { NovoClienteForm } from "./assets/components/NovoCliente";
 import api from "./assets/auth/axiosConfig";
+import ListaPedidos from "./assets/components/ListarFiltrar";
+import DialogExcluirPedido from "./assets/components/DeletePedido";
 
 export type Cliente = {
   id?: number;
@@ -19,7 +20,7 @@ export type Cliente = {
 
 export type Pedido = {
   id?: number;
-  nomeProduto: string;
+  nomeProduto?: string;
   dataRecebimento?: string | Date | null;
   dataEntrega?: string | Date | null;
   descricao?: string | null;
@@ -29,7 +30,7 @@ export type Pedido = {
   quantidade?: number | null;
   clienteId?: number | null;
   cliente?: Cliente | null;
-  status?: "novo" | "em_producao" | "pronto" | "entregue";
+  status?: "orcamento" | "producao" | "finalizado" | "entregue" | null;
 };
 
 export type Profile = {
@@ -71,6 +72,8 @@ const Home: React.FC = () => {
   const [newMensagem, setNewMensagem] = useState<MensegerWs>();
   const wsRef = useRef<WebSocket | null>(null);
   const [editarPedido, setEditarPedido] = useState<number | null>(null);
+  const [excluirPedido, setExcluirPedido] = useState<Pedido | null>(null);
+
   const [open, setOpen] = useState<string | boolean>(false);
   const handleClickOpen = (e: string | boolean) => {
     setOpen(e);
@@ -85,9 +88,6 @@ const Home: React.FC = () => {
       try {
         const response = await api.get("api/pedidos");
         setPedidos(response.data.data);
-        console.log(response.data.error)
-
-        
       } catch (error) {
         // Verifica se é um erro do Axios antes de acessar response
         if (
@@ -103,34 +103,30 @@ const Home: React.FC = () => {
         console.error("Erro ao buscar pedidos:", error);
       }
     };
-    if (editarPedido == null && open === false) {
+    if (editarPedido == null && open === false && excluirPedido == null) {
       fetchPedidos();
     }
-  }, [editarPedido, open]);
+  }, [editarPedido, open, excluirPedido]);
 
   useEffect(() => {
     let retries = 0;
 
     const connect = () => {
       if (wsRef.current) wsRef.current.close();
-      const token = localStorage.getItem('authToken')
-
+      const token = localStorage.getItem("authToken");
 
       // conecta WS com autenticação
-      const ws = new WebSocket(`ws://localhost:3000?token=${token}`)
+      const ws = new WebSocket(`ws://localhost:3000?token=${token}`);
 
       wsRef.current = ws;
 
       ws.onopen = () => {
-        console.log("✅ WebSocket conectado");
-
         retries = 0;
       };
 
       ws.onmessage = (msg) => {
         try {
           const data = JSON.parse(msg.data);
-          console.log("payload recebido:", data); // log do que veio do servidor
 
           if (data.type === "history") {
             setMensagens(data.data); // atualiza o estado
@@ -145,7 +141,6 @@ const Home: React.FC = () => {
       };
 
       ws.onclose = () => {
-        console.log("❌ Conexão perdida. Tentando novamente...");
         retries++;
         setTimeout(connect, Math.min(5000, retries * 1000));
       };
@@ -176,6 +171,9 @@ const Home: React.FC = () => {
       try {
         const resp = await api.get("api/whatsapp/me");
         setProfile(resp.data);
+        if (resp.data.logged == false) {
+          await api.get("api/whatsapp/login");
+        }
       } catch (error) {
         console.error("Erro:", error);
       }
@@ -185,6 +183,11 @@ const Home: React.FC = () => {
 
   return (
     <>
+      <DialogExcluirPedido
+        open={excluirPedido}
+        onClose={() => setExcluirPedido(null)}
+      />
+
       <DialogEditarPedido open={editarPedido} onClose={setEditarPedido} />
       <Dialog
         open={open === "pedido"}
@@ -207,7 +210,6 @@ const Home: React.FC = () => {
           </IconButton>
         </DialogTitle>
 
-        {/* Renderiza o formulário dentro do Dialog, passando a função de fechar */}
         <NovoPedidoForm onClose={handleClose} />
       </Dialog>
       <Dialog
@@ -236,7 +238,7 @@ const Home: React.FC = () => {
       </Dialog>
 
       <div className="flex flex-col h-screen">
-        <header className="bg-blue-950 h-24 flex items-center justify-center">
+        <header className="bg-blue-950 h-24 flex items-center justify-center py-5">
           <Stack
             direction="row"
             spacing={2}
@@ -269,25 +271,15 @@ const Home: React.FC = () => {
             <UserMenu onProfile={setProfile} profile={profile ?? null} />
           </Stack>
         </header>
-
         <main className="bg-gray-900 flex-1 flex items-start justify-start p-5 gap-5 wrap">
-          {Array.isArray(pedidos) &&
-            pedidos.map((pedido) => (
-              <PedidoCard
-                key={pedido.id}
-                pedido={pedido}
-                onEdit={(id) => setEditarPedido(id ?? null)}
-                mensagem={mensagens}
-                newMensagem={newMensagem}
-                onSendMessage={async (to, message) => {
-                  if (wsRef.current?.readyState === WebSocket.OPEN) {
-                    wsRef.current.send(
-                      JSON.stringify({ type: "send-message", to, message })
-                    );
-                  }
-                }}
-              />
-            ))}
+          <ListaPedidos
+            pedidos={pedidos}
+            mensagens={mensagens}
+            newMensagem={newMensagem}
+            setExcluirPedido={setExcluirPedido}
+            setEditarPedido={setEditarPedido}
+            wsRef={wsRef}
+          />
         </main>
       </div>
     </>

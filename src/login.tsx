@@ -57,7 +57,6 @@ const LoginPage: React.FC = () => {
     }
 
     try {
-      console.log("Enviando dados de login:", form);
       const response = await api.post<LoginResponse>(LOGIN_URL, form);
 
       const token = response.data.token;
@@ -65,7 +64,6 @@ const LoginPage: React.FC = () => {
 
       setSuccess(true);
 
-      console.log("Login bem-sucedido! Token armazenado.");
       window.location.href = "/login";
 
 
