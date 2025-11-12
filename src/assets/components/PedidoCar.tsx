@@ -13,6 +13,8 @@ import {
   TextField,
   Box,
   Chip,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
@@ -24,6 +26,36 @@ import ProductionQuantityLimitsIcon from "@mui/icons-material/ProductionQuantity
 import type { Pedido, HistoricoChat, MensegerWs } from "../../home";
 import AudioPlayer from "./player";
 import FullscreenImage from "./ViewImgFull";
+
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function a11yProps(index: number) {
+  return {
+    id: `simple-tab-${index}`,
+    "aria-controls": `simple-tabpanel-${index}`,
+  };
+}
+
+function CustomTabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      className="min-h-100 flex flex-col"
+      hidden={value !== index}
+      id={`simple-tabpanel-${index}`}
+      aria-labelledby={`simple-tab-${index}`}
+      {...other}
+    >
+      {value === index && <Box sx={{ p: 3 }}>{children}</Box>}
+    </div>
+  );
+}
 
 type Props = {
   pedido: Pedido;
@@ -183,7 +215,6 @@ export function PedidoCard({
   onEdit,
   onSendMessage,
 }: Props) {
-
   const [msg, setMsg] = useState("");
   const [chat, setChat] = useState<HistoricoChat>();
   const [sending, setSending] = useState(false);
@@ -193,12 +224,17 @@ export function PedidoCard({
     const parts = clienteNome.split(" ").filter(Boolean);
     return (parts[0]?.[0] ?? "C") + (parts[1]?.[0] ?? "");
   }, [clienteNome]);
+  const [value, setValue] = useState(0);
+
+  const handleChange = (event: React.SyntheticEvent, newValue: number) => {
+    setValue(newValue);
+  };
 
   function formatarStatus(status: string | null | undefined): string {
     const mapa = {
-      orcamento: "Orçamento",
-      producao: "Produção",
-      finalizado: "Finalizado",
+      orcamento: "Aguardando orçamento",
+      producao: "Em produção",
+      finalizado: "Pedido pronto",
       entregue: "Entregue",
     };
     return (status && mapa[status as keyof typeof mapa]) || status || "";
@@ -210,8 +246,8 @@ export function PedidoCard({
     const filtradas = mensagem.filter((m: any) => {
       const raw = m.chatId.replace("@c.us", "");
       let num = raw.startsWith("55") ? raw.slice(2) : raw;
-      const normalized =
-        num.length === 11 ? num : num.slice(0, 2) + "9" + num.slice(2);
+      const normalized = num
+        // num.length !== 11 ? num : num.slice(0, 2) + "9" + num.slice(2);
       return Number(normalized) === Number(pedido.cliente?.numeroCliente);
     });
 
@@ -232,7 +268,11 @@ export function PedidoCard({
     if (chat && newMensagem) {
       if (newMensagem.from === chat.chatId) {
         if (pedido.status !== "entregue") {
-          setAlertMsg(true);
+          if (newMensagem.me) {
+            setAlertMsg(false);
+          } else {
+            setAlertMsg(true);
+          }
         }
 
         if (newMensagem.hasMedia) {
@@ -321,8 +361,6 @@ export function PedidoCard({
 
   return (
     <>
-      
-
       <Card
         sx={{ width: 360, borderRadius: 2, boxShadow: 3 }}
         className={`${alertMsg ? "shake-shadow" : ""} ${
@@ -359,194 +397,213 @@ export function PedidoCard({
             </Typography>
           }
         />
+        <Box sx={{ borderBottom: 1, borderColor: "divider" }}>
+          <Tabs
+            value={value}
+            onChange={handleChange}
+            aria-label="basic tabs example"
+          >
+            <Tab label="Informaçãoes" {...a11yProps(0)} />
+            <Tab label="Chat" {...a11yProps(1)} />
+          </Tabs>
+        </Box>
         <Divider />
         <Typography
           variant="h5"
-          text={"bolder"}
           sx={{ p: 1, fontWeight: "bold" }}
         >
           Status: {formatarStatus(pedido?.status)}
         </Typography>
         <Divider />
-        <CardContent>
-          <Stack spacing={1.25}>
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <CalendarTodayIcon fontSize="small" color="action" />
-              <Typography variant="body2">
-                <strong>Recebimento:</strong> {fmtDate(pedido.dataRecebimento)}
-              </Typography>
-            </Stack>
-
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <CalendarTodayIcon fontSize="small" color="action" />
-              <PrazoEntrega dataEntrega={String(pedido.dataEntrega)} />
-            </Stack>
-
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <ProductionQuantityLimitsIcon fontSize="small" color="action" />
-              <Typography variant="body2">
-                <strong>Quantidade:</strong>{" "}
-                {Number(pedido.quantidade ?? 0).toFixed(0)}
-              </Typography>
-            </Stack>
-
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <AttachMoneyIcon fontSize="small" color="action" />
-              <Typography variant="body2">
-                <strong>Preço unitário:</strong>{" "}
-                {Number(pedido.precoUnt ?? 0).toLocaleString("pt-BR", {
-                  style: "currency",
-                  currency: "BRL",
-                })}
-              </Typography>
-            </Stack>
-
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <AttachMoneyIcon fontSize="small" color="action" />
-              <StatusPagamento
-                quantidade={Number(pedido.quantidade)}
-                precoUnt={Number(pedido.precoUnt)}
-                pago={Boolean(pedido.pago)}
-              />
-            </Stack>
-
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <AttachMoneyIcon fontSize="small" color="action" />
-              <Typography variant="body2">
-                <strong>Forma de Pagamento:</strong>{" "}
-                {String(pedido.formaPagamento).toUpperCase()}
-              </Typography>
-            </Stack>
-
-            <Stack direction="row" alignItems="center" spacing={1}>
-              <Inventory2Icon fontSize="small" color="action" />
-              <Typography variant="body2">
-                <strong>Descrição:</strong> {pedido.descricao ?? "—"}
-              </Typography>
-            </Stack>
-
-            <Divider sx={{ my: 0.5 }} />
-
-            <Stack
-              direction="row"
-              alignItems="center"
-              justifyContent="space-between"
-            >
-              <Stack>
-                <Typography variant="subtitle2">{clienteNome}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {pedido.cliente?.numeroCliente ??
-                    (pedido.clienteId
-                      ? `ID: ${pedido.clienteId}`
-                      : "Telefone não informado")}
+        <CustomTabPanel value={value} index={0}>
+          <CardContent sx={{height: "100%"}} className={`flex flex-col gap-1 max-h-100 h-full justify-end`}>
+            <Stack spacing={1.25}>
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <CalendarTodayIcon fontSize="small" color="action" />
+                <Typography variant="body2">
+                  <strong>Recebimento:</strong>{" "}
+                  {fmtDate(pedido.dataRecebimento)}
                 </Typography>
               </Stack>
-              <Chip
-                label={(pedido.status ?? "novo").replace("_", " ")}
-                color="primary"
-                size="small"
-              />
+
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <CalendarTodayIcon fontSize="small" color="action" />
+                <PrazoEntrega dataEntrega={String(pedido.dataEntrega)} />
+              </Stack>
+
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <ProductionQuantityLimitsIcon fontSize="small" color="action" />
+                <Typography variant="body2">
+                  <strong>Quantidade:</strong>{" "}
+                  {Number(pedido.quantidade ?? 0).toFixed(0)}
+                </Typography>
+              </Stack>
+
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <AttachMoneyIcon fontSize="small" color="action" />
+                <Typography variant="body2">
+                  <strong>Preço unitário:</strong>{" "}
+                  {Number(pedido.precoUnt ?? 0).toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: "BRL",
+                  })}
+                </Typography>
+              </Stack>
+
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <AttachMoneyIcon fontSize="small" color="action" />
+                <StatusPagamento
+                  quantidade={Number(pedido.quantidade)}
+                  precoUnt={Number(pedido.precoUnt)}
+                  pago={Boolean(pedido.pago)}
+                />
+              </Stack>
+
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <AttachMoneyIcon fontSize="small" color="action" />
+                <Typography variant="body2">
+                  <strong>Forma de Pagamento:</strong>{" "}
+                  {String(pedido.formaPagamento).toUpperCase()}
+                </Typography>
+              </Stack>
+
+              <Stack direction="row" alignItems="center" spacing={1}>
+                <Inventory2Icon fontSize="small" color="action" />
+                <Typography variant="body2">
+                  <strong>Descrição:</strong> {pedido.descricao ?? "—"}
+                </Typography>
+              </Stack>
+
+              <Divider sx={{ my: 0.5 }} />
+
+              <Stack
+                direction="row"
+                alignItems="center"
+                justifyContent="space-between"
+              >
+                <Stack>
+                  <Typography variant="subtitle2">{clienteNome}</Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {pedido.cliente?.numeroCliente ??
+                      (pedido.clienteId
+                        ? `ID: ${pedido.clienteId}`
+                        : "Telefone não informado")}
+                  </Typography>
+                </Stack>
+                <Chip
+                  label={(pedido.status ?? "novo").replace("_", " ")}
+                  color="primary"
+                  size="small"
+                />
+              </Stack>
             </Stack>
-          </Stack>
-        </CardContent>
+          </CardContent>
 
-        <CardActions
-          sx={{
-            px: 2,
-            pb: 2,
-            pt: 0,
-            display: pedido.status === "entregue" ? "none" : "flex",
-          }}
-          className={`flex flex-col gap-1`}
-        >
-          <Box
-            ref={containerRef}
+        </CustomTabPanel>
+        <CustomTabPanel value={value} index={1}>
+          <CardActions
             sx={{
+              px: 0,
+              pb: 2,
+              pt: 0,
               display: pedido.status === "entregue" ? "none" : "flex",
-              flexDirection: "column",
-              gap: 1,
-              width: "100%",
-              maxHeight: 200,
-              overflowY: "auto",
-              mb: 1,
             }}
+            className={`flex flex-col gap-1 max-h-100 justify-end`}
           >
-            {chat &&
-              chat.mensagens.map((m: any, i: number) => (
-                <Box
-                  key={i}
-                  sx={{
-                    alignSelf: m.me ? "flex-end" : "flex-start",
-                    bgcolor: m.me ? "#1f6feb" : "#30363d",
-                    p: 1.5,
-                    borderRadius: 2,
-                    width: "infit-content",
-                    minWidth: "35%",
-                    maxWidth: "70%",
-                    wordBreak: "break-word",
-                    color: "white",
-                    position: "relative",
-                    mb: 1,
-                    boxShadow: "0 0 5px rgba(0,0,0,0.3)",
-                  }}
-                >
-                  {m.hasMedia &&
-                    (m.src.startsWith("data:image") ? (
-                      <FullscreenImage src={m.src} alt="Imagem em tela cheia" />
-                    ) : (
-                      <AudioPlayer src={m.src} />
-                    ))}
-
-                  {m.body && (
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        marginBottom: 1,
-                        whiteSpace: "pre-wrap",
-                        pr: 5,
-                      }}
-                    >
-                      {m.body}
-                    </Typography>
-                  )}
-
-                  <Typography
-                    variant="caption"
+            <Box
+              ref={containerRef}
+              sx={{
+                display: pedido.status === "entregue" ? "none" : "flex",
+                flexDirection: "column",
+                gap: 1,
+                width: "100%",
+                height: '100%',
+                maxHeight: 280,
+                overflowY: "auto",
+                mb: 1,
+              }}
+            >
+              {chat &&
+                chat.mensagens.map((m: any, i: number) => (
+                  <Box
+                    key={i}
                     sx={{
-                      position: " absolute",
-                      bottom: 2,
-                      right: 8,
-                      fontSize: "10px",
-                      color: "rgba(255,255,255,0.6)",
+                      alignSelf: m.me ? "flex-end" : "flex-start",
+                      bgcolor: m.me ? "#1f6feb" : "#30363d",
+                      p: 1.5,
+                      borderRadius: 2,
+                      width: "infit-content",
+                      minWidth: "35%",
+                      maxWidth: "70%",
+                      wordBreak: "break-word",
+                      color: "white",
+                      position: "relative",
+                      mb: 1,
+                      boxShadow: "0 0 5px rgba(0,0,0,0.3)",
                     }}
                   >
-                    {formatarData(m.timestamp)}
-                  </Typography>
-                </Box>
-              ))}
-            <div ref={messagesEndRef} />
-          </Box>
-          <Box sx={{ width: "100%" }}>
-            <Stack direction="row" spacing={1} alignItems="center">
-              <TextField
-                fullWidth
-                size="small"
-                placeholder="Enviar mensagem ao cliente"
-                value={msg}
-                onChange={(e) => setMsg(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") handleSend();
-                }}
-              />
-              <Button
-                onClick={handleSend}
-                disabled={!onSendMessage || sending || !msg.trim()}
-              >
-                <SendIcon sx={{ color: "main" }} />
-              </Button>
-            </Stack>
-          </Box>
-        </CardActions>
+                    {m.hasMedia &&
+                      (m.src.startsWith("data:image") ? (
+                        <FullscreenImage
+                          src={m.src}
+                          alt="Imagem em tela cheia"
+                        />
+                      ) : (
+                        <AudioPlayer src={m.src} />
+                      ))}
+
+                    {m.body && (
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          marginBottom: 1,
+                          whiteSpace: "pre-wrap",
+                          pr: 5,
+                        }}
+                      >
+                        {m.body}
+                      </Typography>
+                    )}
+
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        position: " absolute",
+                        bottom: 2,
+                        right: 8,
+                        fontSize: "10px",
+                        color: "rgba(255,255,255,0.6)",
+                      }}
+                    >
+                      {formatarData(m.timestamp)}
+                    </Typography>
+                  </Box>
+                ))}
+              <div ref={messagesEndRef} />
+            </Box>
+               
+            <Box sx={{ width: "100%",   }}>
+              <Stack direction="row" spacing={1} alignItems="center">
+                <TextField
+                  fullWidth
+                  size="small"
+                  placeholder="Enviar mensagem ao cliente"
+                  value={msg}
+                  onChange={(e) => setMsg(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleSend();
+                  }}
+                />
+                <Button
+                  onClick={handleSend}
+                  disabled={!onSendMessage || sending || !msg.trim()}
+                >
+                  <SendIcon sx={{ color: "main" }} />
+                </Button>
+              </Stack>
+            </Box>
+          </CardActions>
+        </CustomTabPanel>
       </Card>
     </>
   );

@@ -167,19 +167,30 @@ const Home: React.FC = () => {
   }, [pedidos, profile]);
 
   useEffect(() => {
-    const fetchMe = async () => {
-      try {
-        const resp = await api.get("api/whatsapp/me");
-        setProfile(resp.data);
-        if (resp.data.logged == false) {
-          await api.get("api/whatsapp/login");
-        }
-      } catch (error) {
-        console.error("Erro:", error);
+  let interval: NodeJS.Timeout | undefined;
+
+  const fetchMe = async () => {
+    try {
+      const resp = await api.get("api/whatsapp/me");
+      setProfile(resp.data);
+
+      if (resp.data.logged === false) {
+        await api.get("api/whatsapp/login");
+        interval = setTimeout(fetchMe, 3000);
+      } else {
+        clearTimeout(interval);
       }
-    };
-    fetchMe();
-  }, []);
+    } catch (error) {
+      console.error("Erro:", error);
+      interval = setTimeout(fetchMe, 3000);
+    }
+  };
+
+  fetchMe();
+
+  return () => clearTimeout(interval);
+}, []);
+
 
   return (
     <>

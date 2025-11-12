@@ -37,6 +37,22 @@ interface NovoPedidoFormProps {
   onClose: () => void;
 }
 
+interface PedidoCli {
+  id: number
+  nomeProduto: string
+  status: string
+}
+
+interface Cliente {
+  id: number
+  nomeCliente: string
+  numeroCliente: number
+  dataCreate: string
+  createdAt: string
+  updatedAt: string
+  pedidos: PedidoCli[]
+}
+
 export const NovoPedidoForm: React.FC<NovoPedidoFormProps> = ({ onClose }) => {
   const [form, setForm] = useState<PedidoForm>({
     clienteId: 0,
@@ -50,14 +66,16 @@ export const NovoPedidoForm: React.FC<NovoPedidoFormProps> = ({ onClose }) => {
   });
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
-  const [clientes, setClientes] = useState(false);
+  const [clientes, setClientes] = useState<Cliente[] | null>(null)
 
   const [error, setError] = useState<string | null>(null);
 
   const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | {
+  target: { name: string; value: any };
+}
   ) => {
-    const { name, value, type } = e.target;
+    const { name, value } = e.target;
 
     let newValue: string | number | boolean = value;
 
@@ -135,16 +153,16 @@ export const NovoPedidoForm: React.FC<NovoPedidoFormProps> = ({ onClose }) => {
         )}
 
         <Grid container spacing={1} direction="column">
-          <Grid item>
+          <Grid>
             <Autocomplete
               disablePortal
-              options={clientes}
+              options={clientes ?? []}
               getOptionLabel={(option) => option.nomeCliente || ""}
               value={
                 (clientes && clientes?.find((c) => c.id === form.clienteId)) ||
                 null
               }
-              onChange={(event, value) =>
+              onChange={(_event: React.SyntheticEvent, value: Cliente | null) =>
                 handleChange({
                   target: { name: "clienteId", value: value ? value.id : "" },
                 })
@@ -161,7 +179,7 @@ export const NovoPedidoForm: React.FC<NovoPedidoFormProps> = ({ onClose }) => {
             />
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid>
             <TextField
               label="Nome do Produto"
               name="nomeProduto"
@@ -173,7 +191,7 @@ export const NovoPedidoForm: React.FC<NovoPedidoFormProps> = ({ onClose }) => {
             />
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid>
             <TextField
               label="Data de Entrega"
               name="dataEntrega"
@@ -187,7 +205,7 @@ export const NovoPedidoForm: React.FC<NovoPedidoFormProps> = ({ onClose }) => {
             />
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid>
             <TextField
               label="Descrição"
               name="descricao"
@@ -200,7 +218,7 @@ export const NovoPedidoForm: React.FC<NovoPedidoFormProps> = ({ onClose }) => {
             />
           </Grid>
 
-          <Grid item xs={6}>
+          <Grid >
             <TextField
               label="Quantidade"
               name="quantidade"
@@ -214,7 +232,7 @@ export const NovoPedidoForm: React.FC<NovoPedidoFormProps> = ({ onClose }) => {
             />
           </Grid>
 
-          <Grid item xs={6}>
+          <Grid >
             <TextField
               label="Preço Unitário (R$)"
               name="precoUnt"
@@ -228,7 +246,7 @@ export const NovoPedidoForm: React.FC<NovoPedidoFormProps> = ({ onClose }) => {
             />
           </Grid>
 
-          <Grid item xs={6}>
+          <Grid >
             <TextField
               select
               label="Forma de Pagamento"
@@ -247,7 +265,7 @@ export const NovoPedidoForm: React.FC<NovoPedidoFormProps> = ({ onClose }) => {
             </TextField>
           </Grid>
 
-          <Grid item xs={6} sx={{ display: "flex", alignItems: "center" }}>
+          <Grid  sx={{ display: "flex", alignItems: "center" }}>
             <FormControlLabel
               control={
                 <Checkbox
