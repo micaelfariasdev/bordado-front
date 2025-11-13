@@ -12,15 +12,11 @@ import {
 import api from "../auth/axiosConfig";
 
 
-// Definição da interface para o estado do formulário (tipagem segura)
 interface ClienteForm {
   nomeCliente: string;
-  // O número do WhatsApp deve ser tratado como STRING no estado
-  // para preservar zeros à esquerda e evitar problemas com números grandes (BigInt).
   numeroCliente: string; 
 }
 
-// Props para receber a função de fechar do Dialog
 interface NovoClienteFormProps {
   onClose: () => void;
 }
@@ -39,8 +35,6 @@ export const NovoClienteForm: React.FC<NovoClienteFormProps> = ({ onClose }) => 
   ) => {
     const { name, value } = e.target;
 
-    // Apenas atribui o valor diretamente. Se o campo for 'numeroCliente',
-    // ele será tratado como string no estado.
     const newValue: string = value;
 
     setForm((prev) => ({
@@ -51,8 +45,6 @@ export const NovoClienteForm: React.FC<NovoClienteFormProps> = ({ onClose }) => 
     setSuccess(false);
   };
 
-  // Funções handleCheckboxChange e referências a "pago" e "dataEntrega" foram removidas,
-  // pois são específicas de "Pedido".
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -75,11 +67,9 @@ export const NovoClienteForm: React.FC<NovoClienteFormProps> = ({ onClose }) => 
 
 
     try {
-      // Endpoint ATUALIZADO para /api/clientes
       await api.post("api/clientes", form);
 
       setSuccess(true);
-      // Opcional: Resetar o formulário após o sucesso
       setForm({
         nomeCliente: "",
         numeroCliente: "",
@@ -112,7 +102,7 @@ export const NovoClienteForm: React.FC<NovoClienteFormProps> = ({ onClose }) => 
         )}
 
         <Grid container spacing={2}>
-          <Grid item xs={12}>
+          <Grid>
             <TextField
               label="Nome do Cliente"
               name="nomeCliente"
@@ -124,11 +114,10 @@ export const NovoClienteForm: React.FC<NovoClienteFormProps> = ({ onClose }) => 
             />
           </Grid>
 
-          <Grid item xs={12}>
+          <Grid>
             <TextField
               label="Número WhatsApp"
               name="numeroCliente"
-              // Usar 'tel' melhora a experiência no celular, mas o valor é uma string
               type="tel" 
               value={form.numeroCliente}
               onChange={handleChange}
@@ -138,7 +127,6 @@ export const NovoClienteForm: React.FC<NovoClienteFormProps> = ({ onClose }) => 
             />
           </Grid>
           
-          {/* Outros campos relacionados a cliente (e-mail, endereço) iriam aqui */}
 
         </Grid>
       </DialogContent>

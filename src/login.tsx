@@ -7,22 +7,17 @@ import {
   CircularProgress,
   Alert,
   Paper,
-  Link as MuiLink // Renomeado para evitar conflito com o 'Link' do React Router, se você usar
 } from '@mui/material';
 
 import api from './assets/auth/axiosConfig';
 
-// URL do endpoint de login da sua API
 const LOGIN_URL = "auth/login";
 
-// 1. Definição da interface para os dados do formulário
 interface LoginForm {
   username: string;
   senha: string;
 }
 
-// 2. Definição da interface para a resposta bem-sucedida da API
-// Ajuste isso conforme a estrutura REAL da sua API. Assumimos que o token vem em 'token'.
 interface LoginResponse {
   token: string;
 }
@@ -134,12 +129,6 @@ const LoginPage: React.FC = () => {
           >
             {loading ? <CircularProgress size={24} color="inherit" /> : 'Entrar'}
           </Button>
-
-          <Box align="center">
-            <MuiLink href="/recuperar-senha" variant="body2">
-              Esqueceu a senha?
-            </MuiLink>
-          </Box>
         </Box>
       </Paper>
     </Box>

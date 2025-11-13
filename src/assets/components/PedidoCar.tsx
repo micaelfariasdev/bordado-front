@@ -228,6 +228,7 @@ export function PedidoCard({
 
   const handleChange = (event: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
+    console.log(event)
   };
 
   function formatarStatus(status: string | null | undefined): string {
