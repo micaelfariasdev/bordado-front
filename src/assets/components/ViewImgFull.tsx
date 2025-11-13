@@ -15,7 +15,7 @@ export default function FullscreenImage({ src, alt }: FullscreenImageProps) {
       <img
         src={src}
         alt={alt}
-        className="cursor-pointer max-w-xs max-h-60 object-contain mb-2 rounded"
+        className="cursor-pointer w-full object-contain mb-2 rounded"
         onClick={() => setOpen(true)}
       />
 

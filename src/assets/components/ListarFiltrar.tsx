@@ -55,8 +55,11 @@ const pedidosFiltrados = useMemo(() => {
         </select>
       </div>
 
-      <div className="bg-gray-900 flex-1 flex flex-wrap gap-5 p-5">
-        <Masonry columns={4} spacing={2}>
+      <div className="bg-gray-900 flex-1 flex flex-wrap gap-5 md:p-5 lg:p-5 p-1">
+        <Masonry
+  columns={{ xs: 1, sm: 2, md: 3, lg: 4 }}
+  spacing={{ xs: 1, sm: 2, md: 3 }}
+>
         {pedidosFiltrados.map((pedido) => (
           <PedidoCard
             key={pedido.id}

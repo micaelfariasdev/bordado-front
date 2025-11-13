@@ -45,6 +45,10 @@ export type Mensagem = {
   body: string;
   me: boolean;
   timestamp: number;
+  src?: string | null;
+  hasMedia?: string | boolean;
+  data?: string;
+
 };
 
 export type HistoricoChat = {
@@ -89,7 +93,6 @@ const Home: React.FC = () => {
         const response = await api.get("api/pedidos");
         setPedidos(response.data.data);
       } catch (error) {
-        // Verifica se é um erro do Axios antes de acessar response
         if (
           typeof error === "object" &&
           error !== null &&
@@ -115,8 +118,7 @@ const Home: React.FC = () => {
       if (wsRef.current) wsRef.current.close();
       const token = localStorage.getItem("authToken");
 
-      // conecta WS com autenticação
-      const ws = new WebSocket(`ws://localhost:3000?token=${token}`);
+      const ws = new WebSocket(`wss://${import.meta.env.VITE_API_URL!}?token=${token}`);
 
       wsRef.current = ws;
 
@@ -156,13 +158,21 @@ const Home: React.FC = () => {
       wsRef.current = null;
     };
   }, [profile]);
+  useEffect(() => {
+  document.title = `Central de Pedidos`
+}, [])
 
   useEffect(() => {
     if (pedidos.length > 0 && profile?.logged) {
       const pedidosIds = pedidos.map((p) => p.cliente?.numeroCliente);
-      api.post("api/whatsapp/historico", {
-        numeros: pedidosIds,
-      });
+      if (wsRef.current?.readyState === WebSocket.OPEN) {
+                wsRef.current.send(
+                  JSON.stringify({ type: "get-history" , numeros: pedidosIds})
+                );
+              }
+      // api.post("api/whatsapp/historico", {
+      //   numeros: pedidosIds,
+      // });
     }
   }, [pedidos, profile]);
 
@@ -244,7 +254,6 @@ const Home: React.FC = () => {
           </IconButton>
         </DialogTitle>
 
-        {/* Renderiza o formulário dentro do Dialog, passando a função de fechar */}
         <NovoClienteForm onClose={handleClose} />
       </Dialog>
 

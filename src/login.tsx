@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from "react";
 import {
   TextField,
   Button,
@@ -7,9 +7,9 @@ import {
   CircularProgress,
   Alert,
   Paper,
-} from '@mui/material';
+} from "@mui/material";
 
-import api from './assets/auth/axiosConfig';
+import api from "./assets/auth/axiosConfig";
 
 const LOGIN_URL = "auth/login";
 
@@ -22,22 +22,36 @@ interface LoginResponse {
   token: string;
 }
 
-
 const LoginPage: React.FC = () => {
-  const [form, setForm] = useState<LoginForm>({ username: '', senha: '' });
+  const [form, setForm] = useState<LoginForm>({ username: "", senha: "" });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
       [name]: value,
     }));
     setError(null);
     setSuccess(false);
   };
+
+  useEffect(() => {
+    const me = async () => {
+      try {
+        const resp = await api.get("api/whatsapp/me");
+
+        if (resp.data.logged === true) {
+          window.location.href = '/'
+        }
+      } catch (error) {
+        console.error("Erro:", error);
+      }
+    };
+    me();
+  });
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -55,21 +69,16 @@ const LoginPage: React.FC = () => {
       const response = await api.post<LoginResponse>(LOGIN_URL, form);
 
       const token = response.data.token;
-      localStorage.setItem('authToken', token);
+      localStorage.setItem("authToken", token);
 
       setSuccess(true);
 
       window.location.href = "/login";
-
-
     } catch (err) {
       let errorMessage = "Erro desconhecido. Tente novamente.";
 
-
-
       setError(errorMessage);
-      localStorage.removeItem('authToken'); // Garante que não há token inválido
-
+      localStorage.removeItem("authToken"); // Garante que não há token inválido
     } finally {
       setLoading(false);
     }
@@ -78,22 +87,29 @@ const LoginPage: React.FC = () => {
   return (
     <Box
       sx={{
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '100vh',
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "100vh",
         backgroundColor: (theme) => theme.palette.grey[100],
       }}
     >
-      <Paper elevation={3} sx={{ padding: 4, width: '100%', maxWidth: 400 }}>
+      <Paper elevation={3} sx={{ padding: 4, width: "100%", maxWidth: 400 }}>
         <Typography variant="h5" component="h1" gutterBottom align="center">
           Acesso ao Sistema
         </Typography>
 
         <Box component="form" onSubmit={handleSubmit} noValidate>
-
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          {success && <Alert severity="success" sx={{ mb: 2 }}>Login efetuado! Redirecionando...</Alert>}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+          {success && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              Login efetuado! Redirecionando...
+            </Alert>
+          )}
 
           <TextField
             label="Nome de Usuário"
@@ -127,13 +143,16 @@ const LoginPage: React.FC = () => {
             disabled={loading || success}
             sx={{ mt: 3, mb: 2 }}
           >
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Entrar'}
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              "Entrar"
+            )}
           </Button>
         </Box>
       </Paper>
     </Box>
   );
 };
-
 
 export default LoginPage;
