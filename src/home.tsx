@@ -168,7 +168,7 @@ const Home: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    if (pedidos.length > 0 && profile?.logged) {
+    if (pedidos?.length > 0 && profile?.logged) {
       const pedidosIds = pedidos.map((p) => p.cliente?.numeroCliente);
       if (wsRef.current?.readyState === WebSocket.OPEN) {
         wsRef.current.send(
