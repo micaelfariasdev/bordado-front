@@ -1,15 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Stack } from "@mui/material";
-import UserMenu from "./assets/components/MenuAvatar";
-import DialogEditarPedido from "./assets/components/DialogEditarPedido";
-import { NovoPedidoForm } from "./assets/components/NovoPedido";
-import { Button, Dialog, DialogTitle, IconButton } from "@mui/material";
-import AddIcon from "@mui/icons-material/Add";
-import CloseIcon from "@mui/icons-material/Close";
-import { NovoClienteForm } from "./assets/components/NovoCliente";
-import api from "./assets/auth/axiosConfig";
-import ListaPedidos from "./assets/components/ListarFiltrar";
-import DialogExcluirPedido from "./assets/components/DeletePedido";
+import React, { useState, useEffect, useRef } from 'react';
+import { Stack } from '@mui/material';
+import UserMenu from './assets/components/MenuAvatar';
+import DialogEditarPedido from './assets/components/DialogEditarPedido';
+import { NovoPedidoForm } from './assets/components/NovoPedido';
+import { Button, Dialog, DialogTitle, IconButton } from '@mui/material';
+import AddIcon from '@mui/icons-material/Add';
+import CloseIcon from '@mui/icons-material/Close';
+import { NovoClienteForm } from './assets/components/NovoCliente';
+import api from './assets/auth/axiosConfig';
+import ListaPedidos from './assets/components/ListarFiltrar';
+import DialogExcluirPedido from './assets/components/DeletePedido';
 
 export type Cliente = {
   id?: number;
@@ -25,12 +25,12 @@ export type Pedido = {
   dataEntrega?: string | Date | null;
   descricao?: string | null;
   pago?: boolean;
-  formaPagamento?: "pix" | "credito" | "debito" | "dinheiro";
+  formaPagamento?: 'pix' | 'credito' | 'debito' | 'dinheiro';
   precoUnt?: number | null;
   quantidade?: number | null;
   clienteId?: number | null;
   cliente?: Cliente | null;
-  status?: "orcamento" | "producao" | "finalizado" | "entregue" | null;
+  status?: 'orcamento' | 'producao' | 'finalizado' | 'entregue' | null;
 };
 
 export type Profile = {
@@ -48,7 +48,6 @@ export type Mensagem = {
   src?: string | null;
   hasMedia?: string | boolean;
   data?: string;
-
 };
 
 export type HistoricoChat = {
@@ -90,20 +89,20 @@ const Home: React.FC = () => {
   useEffect(() => {
     const fetchPedidos = async () => {
       try {
-        const response = await api.get("api/pedidos");
+        const response = await api.get('api/pedidos');
         setPedidos(response.data.data);
       } catch (error) {
         if (
-          typeof error === "object" &&
+          typeof error === 'object' &&
           error !== null &&
-          "response" in error &&
+          'response' in error &&
           (error as any).response &&
           (error as any).response.data &&
-          (error as any).response.data.error === "Token ausente"
+          (error as any).response.data.error === 'Token ausente'
         ) {
-          window.location.href = "/login";
+          window.location.href = '/login';
         }
-        console.error("Erro ao buscar pedidos:", error);
+        console.error('Erro ao buscar pedidos:', error);
       }
     };
     if (editarPedido == null && open === false && excluirPedido == null) {
@@ -116,9 +115,11 @@ const Home: React.FC = () => {
 
     const connect = () => {
       if (wsRef.current) wsRef.current.close();
-      const token = localStorage.getItem("authToken");
+      const token = localStorage.getItem('authToken');
 
-      const ws = new WebSocket(`wss://${import.meta.env.VITE_API_URL!}?token=${token}`);
+      const ws = new WebSocket(
+        `ws://${import.meta.env.VITE_API_URL!}?token=${token}`
+      );
 
       wsRef.current = ws;
 
@@ -130,15 +131,15 @@ const Home: React.FC = () => {
         try {
           const data = JSON.parse(msg.data);
 
-          if (data.type === "history") {
+          if (data.type === 'history') {
             setMensagens(data.data); // atualiza o estado
           }
 
-          if (data.type === "message") {
+          if (data.type === 'message') {
             setNewMensagem(data);
           }
         } catch (e) {
-          console.warn("Mensagem não JSON:", msg.data);
+          console.warn('Mensagem não JSON:', msg.data);
         }
       };
 
@@ -157,19 +158,20 @@ const Home: React.FC = () => {
       wsRef.current?.close();
       wsRef.current = null;
     };
-  }, [profile]);
+  }, [profile ]);
+  
   useEffect(() => {
-  document.title = `Central de Pedidos`
-}, [])
+    document.title = `Central de Pedidos`;
+  }, []);
 
   useEffect(() => {
     if (pedidos.length > 0 && profile?.logged) {
       const pedidosIds = pedidos.map((p) => p.cliente?.numeroCliente);
       if (wsRef.current?.readyState === WebSocket.OPEN) {
-                wsRef.current.send(
-                  JSON.stringify({ type: "get-history" , numeros: pedidosIds})
-                );
-              }
+        wsRef.current.send(
+          JSON.stringify({ type: 'get-history', numeros: pedidosIds })
+        );
+      }
       // api.post("api/whatsapp/historico", {
       //   numeros: pedidosIds,
       // });
@@ -177,30 +179,30 @@ const Home: React.FC = () => {
   }, [pedidos, profile]);
 
   useEffect(() => {
-  let interval: NodeJS.Timeout | undefined;
-
-  const fetchMe = async () => {
-    try {
-      const resp = await api.get("api/whatsapp/me");
-      setProfile(resp.data);
-
-      if (resp.data.logged === false) {
-        await api.get("api/whatsapp/login");
-        interval = setTimeout(fetchMe, 3000);
-      } else {
-        clearTimeout(interval);
+    const clientInit = async () => {
+      try {
+        await api.get('api/whatsapp/initclient');
+      } catch (error) {
+        console.error('Erro:', error);
       }
-    } catch (error) {
-      console.error("Erro:", error);
-      interval = setTimeout(fetchMe, 3000);
-    }
-  };
+    };
 
-  fetchMe();
+    const fetchMe = async () => {
+      try {
+        const resp = await api.get('api/whatsapp/me');
+        setProfile(resp.data);
 
-  return () => clearTimeout(interval);
-}, []);
+        if (resp.data.logged === false) {
+          await api.get('api/whatsapp/login');
+        }
+      } catch (error) {
+        console.error('Erro:', error);
+      }
+    };
 
+    fetchMe();
+    clientInit();
+  }, []);
 
   return (
     <>
@@ -211,7 +213,7 @@ const Home: React.FC = () => {
 
       <DialogEditarPedido open={editarPedido} onClose={setEditarPedido} />
       <Dialog
-        open={open === "pedido"}
+        open={open === 'pedido'}
         onClose={handleClose}
         aria-labelledby="form-dialog-title"
       >
@@ -221,7 +223,7 @@ const Home: React.FC = () => {
             aria-label="fechar"
             onClick={handleClose}
             sx={{
-              position: "absolute",
+              position: 'absolute',
               right: 8,
               top: 8,
               color: (theme) => theme.palette.grey[500],
@@ -234,7 +236,7 @@ const Home: React.FC = () => {
         <NovoPedidoForm onClose={handleClose} />
       </Dialog>
       <Dialog
-        open={open === "cliente"}
+        open={open === 'cliente'}
         onClose={handleClose}
         aria-labelledby="form-dialog-title"
       >
@@ -244,7 +246,7 @@ const Home: React.FC = () => {
             aria-label="fechar"
             onClick={handleClose}
             sx={{
-              position: "absolute",
+              position: 'absolute',
               right: 8,
               top: 8,
               color: (theme) => theme.palette.grey[500],
@@ -254,7 +256,7 @@ const Home: React.FC = () => {
           </IconButton>
         </DialogTitle>
 
-        <NovoClienteForm onClose={handleClose} />
+        <NovoClienteForm onClose={handleClose} ws={wsRef.current}/>
       </Dialog>
 
       <div className="flex flex-col h-screen">
@@ -273,7 +275,7 @@ const Home: React.FC = () => {
                     variant="contained"
                     color="primary"
                     startIcon={<AddIcon />}
-                    onClick={() => handleClickOpen("pedido")}
+                    onClick={() => handleClickOpen('pedido')}
                   >
                     Novo Pedido
                   </Button>
@@ -281,10 +283,11 @@ const Home: React.FC = () => {
                     variant="contained"
                     color="primary"
                     startIcon={<AddIcon />}
-                    onClick={() => handleClickOpen("cliente")}
+                    onClick={() => handleClickOpen('cliente')}
                   >
                     Novo Cliente
                   </Button>
+                  
                 </>
               )}
             </Stack>
