@@ -118,13 +118,16 @@ const Home: React.FC = () => {
       const token = localStorage.getItem('authToken');
 
       const ws = new WebSocket(
-        `ws://${import.meta.env.VITE_API_URL!}?token=${token}`
+        `${import.meta.env.VITE_WS_URL!}?token=${token}`
       );
 
       wsRef.current = ws;
 
       ws.onopen = () => {
         retries = 0;
+
+        const pedidosIds = pedidos?.map((p) => p.cliente?.numeroCliente) || [];
+        ws.send(JSON.stringify({ type: 'get-history', numeros: pedidosIds }));
       };
 
       ws.onmessage = (msg) => {
@@ -158,8 +161,8 @@ const Home: React.FC = () => {
       wsRef.current?.close();
       wsRef.current = null;
     };
-  }, [profile ]);
-  
+  }, [profile]);
+
   useEffect(() => {
     document.title = `Central de Pedidos`;
   }, []);
@@ -176,7 +179,7 @@ const Home: React.FC = () => {
       //   numeros: pedidosIds,
       // });
     }
-  }, [pedidos, profile]);
+  }, [pedidos, profile, wsRef.current]);
 
   useEffect(() => {
     const clientInit = async () => {
@@ -256,7 +259,7 @@ const Home: React.FC = () => {
           </IconButton>
         </DialogTitle>
 
-        <NovoClienteForm onClose={handleClose} ws={wsRef.current}/>
+        <NovoClienteForm onClose={handleClose} ws={wsRef.current} />
       </Dialog>
 
       <div className="flex flex-col h-screen">
@@ -287,7 +290,6 @@ const Home: React.FC = () => {
                   >
                     Novo Cliente
                   </Button>
-                  
                 </>
               )}
             </Stack>
