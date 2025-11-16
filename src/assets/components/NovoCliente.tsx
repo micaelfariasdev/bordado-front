@@ -172,7 +172,7 @@ export const NovoClienteForm: React.FC<NovoClienteFormProps> = ({ onClose, ws })
             ) : (
               clientsMemo.map((client, index) => (
                 <React.Fragment key={client.id}>
-                  <ListItem button onClick={() => handleClientSelect(client)}>
+                  <ListItem className="cursor-pointer hover:bg-blue-100" onClick={() => handleClientSelect(client)}>
                     <ListItemAvatar>
                       <Avatar
                         alt={client.name}
